@@ -1,0 +1,10 @@
+import { NextResponse, type NextRequest } from "next/server";
+import { serverSupabase } from "@/lib/supabase/server";
+
+// Email links (confirm account, reset password) land here and are swapped for a session.
+export async function GET(request: NextRequest) {
+  const url = new URL(request.url);
+  const code = url.searchParams.get("code"), next = url.searchParams.get("next") || "/";
+  if (code) { const sb = await serverSupabase(); await sb.auth.exchangeCodeForSession(code); }
+  return NextResponse.redirect(new URL(next.startsWith("/") ? next : "/", url.origin));
+}
