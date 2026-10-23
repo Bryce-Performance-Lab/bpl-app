@@ -7,11 +7,13 @@ import { fmt } from "@/lib/engine.js";
 import AthleteForm from "@/components/AthleteForm";
 import Dialog from "@/components/Dialog";
 import { useToast } from "@/components/Toast";
+import Invite from "@/components/Invite";
 
 type Row = Athlete & { last?: string | null; done7?: number };
 
 export default function CoachHome() {
   const [rows, setRows] = useState<Row[] | null>(null), [adding, setAdding] = useState(false), [err, setErr] = useState("");
+  const [invite, setInvite] = useState<Athlete | null>(null);
   const toast = useToast();
   async function load() {
     const sb = supabase();
@@ -44,7 +46,7 @@ export default function CoachHome() {
                 <td><Link href={`/coach/athletes/${r.id}`} style={{ fontWeight: 700 }}>{r.name}</Link><div className="note">{r.email}</div></td>
                 <td>{r.event || "–"}</td>
                 <td>{r.lt1 ? `${fmt(r.lt1)} / ${fmt(r.lt2)}` : <span className="note">No test yet</span>}</td>
-                <td>{r.user_id ? <span className="pill p-ok">Linked</span> : <span className="pill p-miss">Invited · not signed up</span>}</td>
+                <td>{r.user_id ? <span className="pill p-ok">Linked</span> : <span className="row" style={{ gap: 6 }}><span className="pill p-miss">Not signed up</span><button className="btn sm" onClick={() => setInvite(r)}>Invite</button></span>}</td>
                 <td>{r.last ? new Date(r.last + "T00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" }) : "–"}</td>
                 <td>{r.done7}</td>
               </tr>
@@ -53,7 +55,10 @@ export default function CoachHome() {
         </div>
       )}
       <Dialog open={adding} onClose={() => setAdding(false)} title="Add athlete" sub="They'll sign up with this email and be linked to you">
-        <AthleteForm onCancel={() => setAdding(false)} onSaved={() => { setAdding(false); toast.show("Athlete added. Send them the sign-up link."); load(); }} />
+        <AthleteForm onCancel={() => setAdding(false)} onSaved={a => { setAdding(false); setInvite(a); load(); }} />
+      </Dialog>
+      <Dialog open={!!invite} onClose={() => setInvite(null)} title={invite ? "Invite " + invite.name : "Invite"} sub="Athlete saved. Now send their sign-up email">
+        {invite && <Invite athlete={invite} />}
       </Dialog>
       {toast.node}
     </>

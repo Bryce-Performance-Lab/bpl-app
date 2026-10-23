@@ -55,9 +55,9 @@ export default function AthleteForm({ athlete, onSaved, onCancel }: { athlete?: 
         <div className="lab" style={{ marginBottom: 6 }}>Heart rate per zone (optional)</div>
         <div className="grid2">{ZC.map((c, i) => <label key={c} className="f">{c} HR<input value={f.hr[i]} placeholder={["≤ 139", "140–158", "159–177", "178–190", "≥ 191"][i]} onChange={e => set("hr", f.hr.map((h, k) => k === i ? e.target.value : h))} /></label>)}</div>
       </div>
-      {!a && <p className="note" style={{ margin: 0 }}>They'll be able to create their account at the sign-up page with this email, and will be linked to you automatically.</p>}
+      {!a && <p className="note" style={{ margin: 0 }}>Next, you'll get an invite email ready to send. They sign up with this email and are linked to you automatically.</p>}
       {err && <p className="err" role="alert" style={{ margin: 0 }}>{err}</p>}
-      <div className="row"><span className="sp" /><button type="button" className="btn" onClick={onCancel}>Cancel</button><button className="btn primary" disabled={busy}>{busy ? "Saving…" : a ? "Save" : "Add athlete"}</button></div>
+      <div className="row"><span className="sp" /><button type="button" className="btn" onClick={onCancel}>Cancel</button><button className="btn primary" disabled={busy}>{busy ? "Saving…" : a ? "Save" : "Add athlete and invite"}</button></div>
     </form>
   );
 }
