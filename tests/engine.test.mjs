@@ -40,3 +40,17 @@ test("compare picks the last 6 similar threshold sessions regardless of rep leng
   assert.equal(c.prev.length, 6);
   assert.equal(c.chips[0].cls, "good");
 });
+
+test("heart rate is judged against the athlete's HR zones", async () => {
+  const { hrChartSVG } = await import("../lib/engine.js");
+  const hrA = { zones: buildZones(291, 207, 202, 188, ["≤ 139", "140–158", "159–177", "178–190", "≥ 191"]) };
+  const an = analyse(mergeParts([compactPart(parseFIT(fx("threshold.fit")), "threshold.fit")]), hrA, thr);
+  assert.ok(an.hasHrZones && an.hzt.T4 > 0);
+  an.sets[0].reps.forEach(r => assert.equal(r.hv, "ok", "rep HR " + r.hrLate));
+  assert.ok(hrChartSVG(an, hrA).startsWith("<svg"));
+  const easy = analyse(mergeParts([compactPart(parseFIT(fx("easy.fit")), "easy.fit")]), hrA, TEMPLATES[0].steps);
+  assert.equal(easy.steadyHr.k, "ok"); assert.ok(easy.drift != null && Math.abs(easy.drift) < 5);
+  const trk = analyse(mergeParts([compactPart(parseFIT(fx("track.fit")), "track.fit")]), hrA, trk2());
+  trk.sets[0].reps.forEach(r => assert.equal(r.hv, "miss"));   // 400 m reps are too short to judge HR
+});
+function trk2() { return TEMPLATES.find(t => t.title === "Track 400s").steps; }
