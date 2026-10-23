@@ -1,10 +1,11 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { unzipSync } from "fflate";
 import { analyse, compactPart, mergeParts, parseFIT, ZC } from "@/lib/engine.js";
 import { supabase } from "@/lib/supabase/client";
 import type { Activity, Athlete, Plan } from "@/lib/data";
 import AnalysisView from "./AnalysisView";
+import { fetchWeather } from "@/lib/weather";
 
 const GUIDES = [
   { name: "Garmin Connect", steps: ["On a computer, open connect.garmin.com and sign in.", "Open the activity.", "Click the gear icon, then Export Original.", "Drop the downloaded .zip here (no need to unzip)."] },
@@ -24,6 +25,16 @@ export default function RunLogger({ athlete, plan, onSaved, onCancel }: { athlet
   const [lacs, setLacs] = useState<{ at: string; v: string }[]>((ex?.lactate || []).map(l => ({ at: l.at || "", v: String(l.v ?? "") })));
   const [msg, setMsg] = useState(""), [err, setErr] = useState(""), [busy, setBusy] = useState(false), [over, setOver] = useState(false), [guide, setGuide] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
+  const [weather, setWeather] = useState<any>(ex?.weather || null);
+  // look up the weather for the run's start point and time (Open-Meteo)
+  useEffect(() => {
+    const ps = parts.slice().sort((a, b) => a.first - b.first), p0 = ps.find(p => p.pos);
+    if (!p0) { if (!parts.length) setWeather(null); return; }
+    const first = ps[0].first, last = ps[ps.length - 1].last;
+    if (weather && weather.lat === p0.pos.lat && weather.lon === p0.pos.lon && weather.start === new Date((first + 631065600) * 1000).toISOString()) return;
+    let live = true; fetchWeather(p0.pos, first, last).then(w => { if (live) setWeather(w); });
+    return () => { live = false; };
+  }, [parts]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const an = parts.length ? analyse(mergeParts(parts), athlete, plan.steps) : null;
   const nReps = Math.max(0, ...plan.steps.filter(s => ZC.indexOf(s.zone) >= 2).map(s => +s.reps || 1));
@@ -76,7 +87,10 @@ export default function RunLogger({ athlete, plan, onSaved, onCancel }: { athlet
       };
       const { data, error } = await sb.from("activities").upsert(row, { onConflict: "session_id" }).select().single();
       if (error) throw error;
-      setPending([]); onSaved(data as Activity);
+      // weather is saved separately so a run still saves if the weather column isn't set up yet
+      let saved = data as Activity;
+      if (weather || ex?.weather) { const w = await sb.from("activities").update({ weather }).eq("id", saved.id).select().single(); if (!w.error) saved = w.data as Activity; }
+      setPending([]); onSaved(saved);
     } catch (e: any) {
       setErr("Couldn't save: " + (e?.message || "try again in a moment."));
     } finally { setBusy(false); }
@@ -111,7 +125,7 @@ export default function RunLogger({ athlete, plan, onSaved, onCancel }: { athlet
       </div>
       {err && <p className="err" role="alert" style={{ margin: 0 }}>{err}</p>}
       {msg && <p className="note" role="status" style={{ margin: 0 }}>{msg}</p>}
-      {an && <AnalysisView an={an} athlete={athlete} steps={plan.steps} parts={parts} onRemovePart={removePart} note={comment} />}
+      {an && <AnalysisView an={an} athlete={athlete} steps={plan.steps} parts={parts} onRemovePart={removePart} note={comment} weather={weather} />}
 
       <div>
         <div className="lab" style={{ marginBottom: 6 }}>How hard was it? (RPE 1–10)</div>

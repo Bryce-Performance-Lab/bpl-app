@@ -64,3 +64,13 @@ test("note themes are detected, negations ignored, and set against drift", async
   const p = driftPatterns([{ id: 1, date: "2026-10-01", drift: 9, note: "really hot" }, { id: 2, date: "2026-10-02", drift: 8, note: "humid and sticky" }, { id: 3, date: "2026-10-03", drift: 2, note: "felt good" }, { id: 4, date: "2026-10-04", drift: 7, note: "" }]);
   assert.equal(p.rows[0].key, "heat"); assert.equal(p.rows[0].n, 2); assert.equal(p.unexplained.length, 1);
 });
+
+test("GPS start point and watch temperature are read; thermal strain only on hot days", async () => {
+  const { thermalStrain } = await import("../lib/engine.js");
+  const part = compactPart(parseFIT(fx("hot_easy.fit")), "hot_easy.fit");
+  assert.deepEqual(part.pos, { lat: -37.89, lon: 145.06 });
+  const an = analyse(mergeParts([part]), athlete, TEMPLATES[0].steps);
+  assert.equal(an.watchTemp.rise, 3);
+  assert.equal(thermalStrain(an, { temp: 30, feels: 30, dew: 10 }).t, "Marked rise");
+  assert.equal(thermalStrain(an, { temp: 15, feels: 14, dew: 8 }), null);
+});

@@ -1,10 +1,11 @@
 "use client";
 import { useMemo } from "react";
-import { analyse, detectThemes, dur, fmt, hardest, hrChartSVG, hrZone, hrRangeText, mergeParts, paceChartSVG, partRole, totals, verdictFor, zone, zRangeShort, ZC, FIT_EPOCH } from "@/lib/engine.js";
+import { analyse, detectThemes, dewBand, isHot, thermalStrain, dur, fmt, hardest, hrChartSVG, hrZone, hrRangeText, mergeParts, paceChartSVG, partRole, totals, verdictFor, zone, zRangeShort, ZC, FIT_EPOCH } from "@/lib/engine.js";
 import type { Athlete, Step } from "@/lib/data";
+import { windWord } from "@/lib/weather";
 
 /** Detected workout, rep table, warm-up/cool-down, pace chart and time in zone. */
-export default function AnalysisView({ an: saved, athlete, steps, parts, onRemovePart, note }: { an: any; athlete: Athlete; steps: Step[]; parts?: any[]; onRemovePart?: (i: number) => void; note?: string | null }) {
+export default function AnalysisView({ an: saved, athlete, steps, parts, onRemovePart, note, weather }: { an: any; athlete: Athlete; steps: Step[]; parts?: any[]; onRemovePart?: (i: number) => void; note?: string | null; weather?: any }) {
   // Re-run the analysis from the stored files so it always uses the athlete's current zones (pace and HR).
   const an = useMemo(() => { try { return parts?.length ? analyse(mergeParts(parts), athlete, steps) : saved; } catch { return saved; } }, [saved, parts, athlete, steps]);
   if (!an) return null;
@@ -45,6 +46,23 @@ export default function AnalysisView({ an: saved, athlete, steps, parts, onRemov
         <div className="tile"><span>Avg HR</span><b>{an.hr ? an.hr + " bpm" : "–"}</b></div>
         {an.hrMax ? <div className="tile"><span>Max HR</span><b>{an.hrMax} bpm</b></div> : null}
       </div>
+      {weather && (
+        <div className="card" style={{ padding: 12, background: "var(--sunk)", border: 0 }}>
+          <div className="row" style={{ marginBottom: 6 }}>
+            <span className="lab">Weather during the run</span><span className="sp" />
+            {dewBand(weather.dew) && <span className={"pill p-" + dewBand(weather.dew).k}>{dewBand(weather.dew).t}</span>}
+          </div>
+          <div className="row" style={{ gap: 16, fontSize: 13 }}>
+            <span><b>{weather.temp}°C</b> <span className="note">feels {weather.feels}°C</span></span>
+            <span><b>{weather.rh}%</b> <span className="note">humidity</span></span>
+            <span><b>{weather.dew}°C</b> <span className="note">dew point</span></span>
+            <span><b>{weather.wind} km/h</b> <span className="note">{windWord(weather.windDir)} wind{weather.gust ? `, gusts ${Math.round(weather.gust)}` : ""}</span></span>
+            {weather.rain ? <span><b>{weather.rain} mm</b> <span className="note">rain</span></span> : null}
+          </div>
+          <div className="note" style={{ marginTop: 6 }}>Weather data by <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo.com</a> for the run's start area and time.</div>
+        </div>
+      )}
+      {!weather && parts?.length > 0 && !parts.some((p: any) => p.pos) && <p className="note" style={{ margin: 0 }}>No weather for this run: the file has no GPS position (treadmill, GPS off, or uploaded before weather was added).</p>}
       {an.hr && an.hasHrZones === false && <p className="note" style={{ margin: 0 }}>Heart rate isn't judged yet: add HR ranges to this athlete's zones (e.g. 140–158) to see whether HR was in zone.</p>}
       {an.plannedReps > 0 && (
         <div className="verdict">
@@ -109,6 +127,20 @@ export default function AnalysisView({ an: saved, athlete, steps, parts, onRemov
       )}
       {chart && <div><div className="lab" style={{ marginBottom: 4 }}>{an.firstS != null ? "Main session pace" : "Pace"}</div><div dangerouslySetInnerHTML={{ __html: chart }} /></div>}
       {hrChart && <div><div className="lab" style={{ marginBottom: 4 }}>{an.firstS != null ? "Main session heart rate" : "Heart rate"}</div><div dangerouslySetInnerHTML={{ __html: hrChart }} /></div>}
+      {isHot(weather) && (() => {
+        const ts = thermalStrain(an, weather);
+        if (!ts) return <div className="verdict"><b>Hot or humid conditions</b><span className="note" style={{ flex: "1 1 260px" }}>This watch didn't record temperature on this run, so skin temperature can't be checked.</span></div>;
+        return (
+          <div className="verdict">
+            <b>Watch temperature: {ts.base}°C → {ts.end}°C ({ts.rise > 0 ? "+" : ""}{ts.rise}°C), peak {ts.max}°C</b>
+            <span className={"pill p-" + ts.k}>{ts.t}</span>
+            <div className="note" style={{ flexBasis: "100%" }}>
+              {ts.both ? `Signs of thermal strain: skin temperature climbed while heart rate drifted ${an.drift}% in ${weather.temp}°C, dew point ${weather.dew}°C. ` : ts.k === "ok" ? "Skin temperature held steady despite the conditions. " : "Skin temperature climbed through the run. "}
+              The watch sensor sits on the wrist, so it tracks skin temperature (and is nudged by sun and sleeves), not core temperature. Read it as a trend.
+            </div>
+          </div>
+        );
+      })()}
       <div className="zcmp">
         <span className="note">Planned</span><div className="zbar">{ZC.map(z => plannedT.byZone[z] ? <i key={z} className={"z-" + z} style={{ width: (plannedT.byZone[z] / ptot * 100).toFixed(1) + "%" }} title={z} /> : null)}</div>
         <span className="note">Pace</span><div className="zbar">{ZC.map(z => an.zt[z] ? <i key={z} className={"z-" + z} style={{ width: (an.zt[z] / tot * 100).toFixed(1) + "%" }} title={z} /> : null)}</div>

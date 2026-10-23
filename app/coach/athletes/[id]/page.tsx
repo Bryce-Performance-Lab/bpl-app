@@ -131,7 +131,7 @@ export default function CoachAthlete({ params }: { params: Promise<{ id: string 
                   </div>
                   {cmp && <div className="card"><h3 style={{ marginBottom: 8 }}>Compare with similar sessions</h3><CompareView all={plans} ses={cur} athlete={a} /></div>}
                   <RunSummary act={cur.activity} coach onSaved={() => load()} />
-                  <AnalysisView an={cur.analysis} athlete={a} steps={cur.steps} parts={cur.activity.parts} note={cur.activity.comment} />
+                  <AnalysisView an={cur.analysis} athlete={a} steps={cur.steps} parts={cur.activity.parts} note={cur.activity.comment} weather={cur.activity.weather} />
                 </div>
               ) : (
                 <RunLogger athlete={a} plan={cur} onCancel={cur.activity ? () => setUpload(false) : undefined}

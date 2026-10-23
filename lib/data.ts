@@ -4,7 +4,7 @@ export type Zone = { code: string; fast: number | null; slow: number | null; hr?
 export type Athlete = { id: string; coach_id: string; user_id: string | null; name: string; email: string; event: string | null; test_date: string | null; lt1: number | null; lt2: number | null; zones: Zone[] };
 export type Step = { label?: string; reps: number; amount: number; unit: "min" | "sec" | "km" | "m"; zone: string; recAmount?: number; recUnit?: string; recZone?: string };
 export type Session = { id: string; athlete_id: string; date: string; title: string; tag: string; setting: string | null; steps: Step[]; notes: string | null };
-export type Activity = { id: string; athlete_id: string; session_id: string | null; date: string; km: number | null; duration_sec: number | null; rpe: number | null; comment: string | null; coach_comment: string | null; lactate: { at: string; v: number | string }[]; parts: any[]; analysis: any; files: string[] };
+export type Activity = { id: string; athlete_id: string; session_id: string | null; date: string; km: number | null; duration_sec: number | null; rpe: number | null; comment: string | null; coach_comment: string | null; lactate: { at: string; v: number | string }[]; parts: any[]; analysis: any; files: string[]; weather?: any };
 /** A session with its logged run attached (the shape the analysis engine compares). */
 export type Plan = Session & { activity: Activity | null; analysis: any; actual: { rpe: number | null; lactate: any[] } };
 
