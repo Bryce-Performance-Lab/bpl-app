@@ -13,6 +13,7 @@ import RunLogger from "@/components/RunLogger";
 import RunSummary from "@/components/RunSummary";
 import { niceDate } from "@/components/SessionHead";
 import { useToast } from "@/components/Toast";
+import DriftInsights from "@/components/DriftInsights";
 
 const WEEKS = 4, DOW = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 
@@ -102,6 +103,7 @@ export default function CoachAthlete({ params }: { params: Promise<{ id: string 
         </div>
       </div>
       <div className="row note">{ZC.map(z => <span key={z} className="row" style={{ gap: 4 }}><span className={"zchip z-" + z}>{z}</span>{ZNAME[z]}</span>)}</div>
+      <DriftInsights plans={plans} athlete={a} />
 
       <Dialog open={editZones} onClose={() => setEditZones(false)} title={"Details and zones · " + a.name}>
         <AthleteForm athlete={a} onCancel={() => setEditZones(false)} onSaved={x => { setA(x); setEditZones(false); toast.show("Saved"); }} />
@@ -129,7 +131,7 @@ export default function CoachAthlete({ params }: { params: Promise<{ id: string 
                   </div>
                   {cmp && <div className="card"><h3 style={{ marginBottom: 8 }}>Compare with similar sessions</h3><CompareView all={plans} ses={cur} athlete={a} /></div>}
                   <RunSummary act={cur.activity} coach onSaved={() => load()} />
-                  <AnalysisView an={cur.analysis} athlete={a} steps={cur.steps} parts={cur.activity.parts} />
+                  <AnalysisView an={cur.analysis} athlete={a} steps={cur.steps} parts={cur.activity.parts} note={cur.activity.comment} />
                 </div>
               ) : (
                 <RunLogger athlete={a} plan={cur} onCancel={cur.activity ? () => setUpload(false) : undefined}

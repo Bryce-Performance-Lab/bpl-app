@@ -4,6 +4,7 @@ import Link from "next/link";
 import { fmt, mainStep, tagOf } from "@/lib/engine.js";
 import { useAthlete, NotLinked } from "@/components/useAthlete";
 import CompareView from "@/components/CompareView";
+import DriftInsights from "@/components/DriftInsights";
 import { niceDate } from "@/components/SessionHead";
 
 export default function Progress() {
@@ -34,6 +35,7 @@ export default function Progress() {
           ))}
         </section>
       ))}
+      <DriftInsights plans={plans} athlete={a} linkBase="/athlete/session/" />
     </>
   );
 }

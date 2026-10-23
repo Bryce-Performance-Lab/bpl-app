@@ -54,3 +54,13 @@ test("heart rate is judged against the athlete's HR zones", async () => {
   trk.sets[0].reps.forEach(r => assert.equal(r.hv, "miss"));   // 400 m reps are too short to judge HR
 });
 function trk2() { return TEMPLATES.find(t => t.title === "Track 400s").steps; }
+
+test("note themes are detected, negations ignored, and set against drift", async () => {
+  const { detectThemes, driftPatterns } = await import("../lib/engine.js");
+  const k = t => detectThemes(t).map(x => x.key);
+  assert.deepEqual(k("Heat and wind made it harder"), ["heat", "wind"]);
+  assert.deepEqual(k("no wind, slept well, good warm-up"), []);
+  assert.deepEqual(k("Getting a cold, legs were heavy"), ["ill", "legs"]);
+  const p = driftPatterns([{ id: 1, date: "2026-10-01", drift: 9, note: "really hot" }, { id: 2, date: "2026-10-02", drift: 8, note: "humid and sticky" }, { id: 3, date: "2026-10-03", drift: 2, note: "felt good" }, { id: 4, date: "2026-10-04", drift: 7, note: "" }]);
+  assert.equal(p.rows[0].key, "heat"); assert.equal(p.rows[0].n, 2); assert.equal(p.unexplained.length, 1);
+});

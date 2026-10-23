@@ -1,10 +1,10 @@
 "use client";
 import { useMemo } from "react";
-import { analyse, dur, fmt, hardest, hrChartSVG, hrZone, hrRangeText, mergeParts, paceChartSVG, partRole, totals, verdictFor, zone, zRangeShort, ZC, FIT_EPOCH } from "@/lib/engine.js";
+import { analyse, detectThemes, dur, fmt, hardest, hrChartSVG, hrZone, hrRangeText, mergeParts, paceChartSVG, partRole, totals, verdictFor, zone, zRangeShort, ZC, FIT_EPOCH } from "@/lib/engine.js";
 import type { Athlete, Step } from "@/lib/data";
 
 /** Detected workout, rep table, warm-up/cool-down, pace chart and time in zone. */
-export default function AnalysisView({ an: saved, athlete, steps, parts, onRemovePart }: { an: any; athlete: Athlete; steps: Step[]; parts?: any[]; onRemovePart?: (i: number) => void }) {
+export default function AnalysisView({ an: saved, athlete, steps, parts, onRemovePart, note }: { an: any; athlete: Athlete; steps: Step[]; parts?: any[]; onRemovePart?: (i: number) => void; note?: string | null }) {
   // Re-run the analysis from the stored files so it always uses the athlete's current zones (pace and HR).
   const an = useMemo(() => { try { return parts?.length ? analyse(mergeParts(parts), athlete, steps) : saved; } catch { return saved; } }, [saved, parts, athlete, steps]);
   if (!an) return null;
@@ -66,6 +66,12 @@ export default function AnalysisView({ an: saved, athlete, steps, parts, onRemov
           <b>Cardiac drift: {an.drift > 0 ? "+" : ""}{an.drift}%</b>
           <span className="note" style={{ flex: "1 1 260px" }}>How much less pace you got per heartbeat in the second half than the first (warm-up left out). Under 5% means good aerobic control; higher often means heat, dehydration, fatigue or going out too fast.</span>
           <span className={"pill " + (an.drift < 5 ? "p-ok" : an.drift < 8 ? "p-fast" : "p-slow")}>{an.drift < 5 ? "Steady" : an.drift < 8 ? "Some drift" : "High drift"}</span>
+          {(() => {
+            const th = detectThemes(note);
+            if (th.length) return <div className="row" style={{ flexBasis: "100%", gap: 6 }}><span className="note">From the note:</span>{th.map((t: any) => <span key={t.key} className="pill p-miss" title={"Mentioned: " + t.words.join(", ")}>{t.label}</span>)}</div>;
+            if (an.drift >= 5) return <div className="note" style={{ flexBasis: "100%" }}>{note ? "Nothing in the note points to a cause." : "No note on this run."} Worth checking sleep, fuelling, hydration and the conditions.</div>;
+            return null;
+          })()}
         </div>
       )}
       {an.sets.map((st: any) => {

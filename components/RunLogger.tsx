@@ -111,7 +111,7 @@ export default function RunLogger({ athlete, plan, onSaved, onCancel }: { athlet
       </div>
       {err && <p className="err" role="alert" style={{ margin: 0 }}>{err}</p>}
       {msg && <p className="note" role="status" style={{ margin: 0 }}>{msg}</p>}
-      {an && <AnalysisView an={an} athlete={athlete} steps={plan.steps} parts={parts} onRemovePart={removePart} />}
+      {an && <AnalysisView an={an} athlete={athlete} steps={plan.steps} parts={parts} onRemovePart={removePart} note={comment} />}
 
       <div>
         <div className="lab" style={{ marginBottom: 6 }}>How hard was it? (RPE 1–10)</div>
