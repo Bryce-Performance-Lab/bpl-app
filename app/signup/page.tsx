@@ -13,8 +13,9 @@ export default function Signup() {
     if (password.length < 8) { setErr("Use at least 8 characters for your password."); return; }
     setBusy(true);
     const sb = supabase(), em = email.trim().toLowerCase();
-    const { data: allowed } = await sb.rpc("can_sign_up", { p_email: em });
-    if (!allowed) { setBusy(false); setErr("This email hasn't been added yet. Ask your coach to add you, using this exact email."); return; }
+    const { data: allowed, error: checkErr } = await sb.rpc("can_sign_up", { p_email: em });
+    if (checkErr) { setBusy(false); setErr("Couldn't check your email just now. Please try again in a moment."); return; }
+    if (!allowed) { setBusy(false); setErr(`${em} hasn't been added yet. Check it's typed correctly, or ask your coach to add you with this exact email.`); return; }
     const { data, error } = await sb.auth.signUp({ email: em, password, options: { data: { full_name: name.trim() }, emailRedirectTo: location.origin + "/auth/callback" } });
     setBusy(false);
     if (error) { setErr(/already registered/i.test(error.message) ? "There's already an account for this email. Sign in instead." : error.message); return; }
