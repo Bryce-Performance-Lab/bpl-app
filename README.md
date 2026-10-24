@@ -45,7 +45,7 @@ Garmin's Personal API key is for the key owner's own data, so it's switched on f
 In Vercel → Settings → Environment Variables add (server-only, no NEXT_PUBLIC_ prefix):
 - `GARMIN_PERSONAL_API_KEY` = your personal key from Garmin Connect (mark it Sensitive)
 - `GARMIN_ATHLETE_EMAIL` = the email on *your* athlete record in the app
-Then redeploy. On that athlete's runs the coach sees **Import from Garmin Connect**.
+Then redeploy. On that athlete's runs, both the athlete and the coach see **Import from Garmin Connect**.
 For athletes, apply for Garmin's Starter (business) tier instead.
 
 ## Not set up yet

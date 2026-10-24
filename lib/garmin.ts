@@ -23,14 +23,16 @@ export async function garminGet(path: string) {
   return r;
 }
 
-/** Only the coach, and only for the one athlete record linked to the key. */
+/**
+ * Only for the one athlete record linked to the key, and only when signed in as that athlete or as their coach.
+ * (Row security means the athlete row is only readable by those two people.)
+ */
 export async function allowed(athleteId: string | null) {
   const email = (process.env.GARMIN_ATHLETE_EMAIL || "").trim().toLowerCase();
   if (!process.env.GARMIN_PERSONAL_API_KEY || !email || !athleteId) return false;
   const sb = await serverSupabase();
   const { data: { user } } = await sb.auth.getUser(); if (!user) return false;
-  const { data: prof } = await sb.from("profiles").select("role").eq("id", user.id).single();
-  if (prof?.role !== "coach") return false;
-  const { data: a } = await sb.from("athletes").select("email").eq("id", athleteId).single();
-  return a?.email === email;
+  const { data: a } = await sb.from("athletes").select("email,user_id,coach_id").eq("id", athleteId).single();
+  if (!a || a.email !== email) return false;
+  return a.user_id === user.id || a.coach_id === user.id;
 }
