@@ -54,3 +54,13 @@ export function windWord(deg: number | null) {
   if (deg == null) return "";
   return ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round(deg / 45) % 8];
 }
+
+/** Short label for calendar tiles, e.g. "30°C · humid". */
+export function weatherChip(w: any): string {
+  if (!w || w.temp == null) return "";
+  const bits = [Math.round(w.temp) + "°C"];
+  if ((w.dew ?? 0) >= 16) bits.push("humid");
+  if ((w.wind ?? 0) >= 25) bits.push("windy");
+  if ((w.rain ?? 0) >= 0.5) bits.push("rain");
+  return bits.join(" · ");
+}

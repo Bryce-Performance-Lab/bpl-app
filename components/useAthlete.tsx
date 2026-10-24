@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { loadPlans, myAthlete, type Athlete, type Plan } from "@/lib/data";
+import { backfillRecent } from "@/lib/backfill";
 
 /** The signed-in athlete's record and all their sessions with runs attached. */
 export function useAthlete() {
@@ -9,7 +10,10 @@ export function useAthlete() {
   const load = useCallback(async () => {
     try {
       const a = await myAthlete(); setAthlete(a);
-      if (a) setPlans(await loadPlans(a.id));
+      if (a) {
+        const ps = await loadPlans(a.id); setPlans(ps);
+        backfillRecent(ps, (pid, act) => setPlans(cur => cur.map(p => p.id === pid ? { ...p, activity: act } : p)));
+      }
     } catch (e: any) { setErr(e.message || "Couldn't load your training."); }
   }, []);
   useEffect(() => { load(); }, [load]);

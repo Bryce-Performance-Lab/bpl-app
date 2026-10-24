@@ -71,10 +71,10 @@ export default function AnalysisView({ an: saved, athlete, steps, parts, onRemov
               <div className="note" style={{ marginTop: 4 }}>Heat acclimatisation builds over about 1–2 weeks of regular heat and fades after a few weeks without it, so early-season hot days hit harder. This is an estimate from local weather and logged runs.</div>
             </div>
           )}
-          <div className="note" style={{ marginTop: 6 }}>Weather data by <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo.com</a> for the run's start area and time.</div>
+          <div className="note" style={{ marginTop: 6 }}>Weather data by <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo.com</a> {weather.approx ? "for the area of this athlete's other runs (this file has no GPS), so treat it as approximate." : "for the run's start area and time."}</div>
         </div>
       )}
-      {!weather && parts?.length > 0 && !parts.some((p: any) => p.pos) && <p className="note" style={{ margin: 0 }}>No weather for this run: the file has no GPS position (treadmill, GPS off, or uploaded before weather was added).</p>}
+      {!weather && parts?.length > 0 && <p className="note" style={{ margin: 0 }}>No weather for this run yet: the file has no GPS position and there are no other runs with a location to go by.</p>}
       {an.hr && an.hasHrZones === false && <p className="note" style={{ margin: 0 }}>Heart rate isn't judged yet: add HR ranges to this athlete's zones (e.g. 140–158) to see whether HR was in zone.</p>}
       {an.plannedReps > 0 && (
         <div className="verdict">

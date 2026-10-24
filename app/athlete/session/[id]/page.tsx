@@ -10,6 +10,7 @@ import RunSummary from "@/components/RunSummary";
 import AnalysisView from "@/components/AnalysisView";
 import CompareView from "@/components/CompareView";
 import { useToast } from "@/components/Toast";
+import { backfillWeather } from "@/lib/backfill";
 
 export default function AthleteSession({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -22,6 +23,7 @@ export default function AthleteSession({ params }: { params: Promise<{ id: strin
   const p = plans.find(x => x.id === id);
   if (!p) return <p className="note">Session not found. <Link href="/athlete">Back to this week</Link></p>;
   const today = iso(new Date()), act = p.activity;
+  if (act && !act.weather) backfillWeather(act, plans).then(x => { if (x) reload(); });
   return (
     <>
       <div className="note"><Link href="/athlete">← This week</Link></div>

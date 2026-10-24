@@ -14,6 +14,8 @@ import RunSummary from "@/components/RunSummary";
 import { niceDate } from "@/components/SessionHead";
 import { useToast } from "@/components/Toast";
 import DriftInsights from "@/components/DriftInsights";
+import { backfillRecent, backfillWeather } from "@/lib/backfill";
+import { weatherChip } from "@/lib/weather";
 
 const WEEKS = 4, DOW = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 
@@ -30,7 +32,10 @@ export default function CoachAthlete({ params }: { params: Promise<{ id: string 
     const { data, error } = await supabase().from("athletes").select("*").eq("id", id).single();
     if (error) { setErr("Athlete not found."); return; }
     setA(data as Athlete);
-    try { setPlans(await loadPlans(id)); } catch (e: any) { setErr(e.message); }
+    try {
+      const ps = await loadPlans(id); setPlans(ps);
+      backfillRecent(ps, (pid, act) => setPlans(cur => cur.map(p => p.id === pid ? { ...p, activity: act } : p)));
+    } catch (e: any) { setErr(e.message); }
   }, [id]);
   useEffect(() => { load(); }, [load]);
 
@@ -40,6 +45,7 @@ export default function CoachAthlete({ params }: { params: Promise<{ id: string 
   if (!a) return <p className="note">Loading…</p>;
 
   const cur = open?.plan ? plans.find(p => p.id === open.plan!.id) || open.plan : null;
+  if (cur?.activity && !cur.activity.weather) backfillWeather(cur.activity, plans).then(x => { if (x) setPlans(ps => ps.map(p => p.id === cur.id ? { ...p, activity: x } : p)); });
   function close() { setOpen(null); setCmp(false); setUpload(false); }
   function show(p: Plan) { setOpen({ plan: p, date: p.date, tab: p.activity ? "run" : "plan" }); setCmp(false); setUpload(false); }
 
@@ -89,6 +95,7 @@ export default function CoachAthlete({ params }: { params: Promise<{ id: string 
                         ? <span className={"pill " + (p.analysis.found < p.analysis.plannedReps ? "p-miss" : p.analysis.onTarget === p.analysis.plannedReps ? "p-ok" : "p-slow")}>{p.analysis.onTarget}/{p.analysis.plannedReps} on target</span>
                         : <span className="pill p-ok">✓ {p.analysis.km.toFixed(1)} km · {fmt(p.analysis.pace)}/km</span>)
                         : d < today && p.tag !== "Rest" ? <span className="note">Not logged</span> : null}
+                      {p.activity?.weather && <span className="note">{weatherChip(p.activity.weather)}</span>}
                     </button>
                   ))}
                 </div>

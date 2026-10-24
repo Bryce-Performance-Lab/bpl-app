@@ -142,3 +142,4 @@ dialog.dlg::backdrop { background: rgba(8, 20, 40, 0.5); }
   .mgrid button[aria-pressed="true"] { background: var(--navy); color: #fff; }
   .mgrid .dots { display: flex; gap: 2px; height: 6px; } .mgrid .dots i { width: 6px; height: 6px; border-radius: 99px; display: block; }
 }
+.scard .pill { white-space: normal; }
