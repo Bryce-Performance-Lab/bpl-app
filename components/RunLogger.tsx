@@ -26,6 +26,29 @@ export default function RunLogger({ athlete, plan, onSaved, onCancel }: { athlet
   const [msg, setMsg] = useState(""), [err, setErr] = useState(""), [busy, setBusy] = useState(false), [over, setOver] = useState(false), [guide, setGuide] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
   const [weather, setWeather] = useState<any>(ex?.weather || null);
+  // Garmin import: only switched on for the athlete linked to the Personal API key (checked on the server)
+  const [gOn, setGOn] = useState(false), [gList, setGList] = useState<any[] | null>(null), [gPick, setGPick] = useState<string[]>([]), [gBusy, setGBusy] = useState(false), [gErr, setGErr] = useState("");
+  useEffect(() => { fetch(`/api/garmin/status?athleteId=${athlete.id}`).then(r => r.json()).then(j => setGOn(!!j.enabled)).catch(() => setGOn(false)); }, [athlete.id]);
+  async function gLoad() {
+    setGErr(""); setGBusy(true);
+    try {
+      const r = await fetch(`/api/garmin/activities?athleteId=${athlete.id}&date=${plan.date}`); const j = await r.json();
+      if (!r.ok) throw new Error(j.error === "not_configured" ? "The Garmin key isn't set up on the server yet." : "Couldn't reach Garmin. Try again in a minute.");
+      setGList(j); setGPick(j.filter((a: any) => a.start?.startsWith(plan.date) && /run/i.test(a.type)).map((a: any) => a.id));
+    } catch (e: any) { setGErr(e.message); } finally { setGBusy(false); }
+  }
+  async function gImport() {
+    setGErr(""); setGBusy(true);
+    try {
+      const files: File[] = [];
+      for (const id of gPick) {
+        const r = await fetch(`/api/garmin/file?athleteId=${athlete.id}&id=${id}`);
+        if (!r.ok) throw new Error("Couldn't download activity " + id + " from Garmin.");
+        files.push(new File([await r.blob()], `garmin-${id}.zip`, { type: "application/zip" }));
+      }
+      await addFiles(files); setGList(null);
+    } catch (e: any) { setGErr(e.message); } finally { setGBusy(false); }
+  }
   // look up the weather for the run's start point and time (Open-Meteo)
   useEffect(() => {
     const ps = parts.slice().sort((a, b) => a.first - b.first), p0 = ps.find(p => p.pos);
@@ -107,6 +130,24 @@ export default function RunLogger({ athlete, plan, onSaved, onCancel }: { athlet
 
   return (
     <div className="stack">
+      {gOn && (
+        <div className="card" style={{ padding: 12, borderColor: "var(--sky)" }}>
+          <div className="row"><b style={{ flex: 1 }}>Import from Garmin Connect</b>{!gList && <button type="button" className="btn primary sm" disabled={gBusy} onClick={gLoad}>{gBusy ? "Loading…" : "Find runs around " + new Date(plan.date + "T00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" })}</button>}</div>
+          {gList && (gList.length ? (
+            <div className="stack" style={{ gap: 4, marginTop: 8 }}>
+              <span className="note">Tick the activities for this session. Separate warm-up, session and cool-down recordings are joined automatically.</span>
+              {gList.map(a => (
+                <label key={a.id} className="row" style={{ gap: 8, fontSize: 13, cursor: "pointer" }}>
+                  <input type="checkbox" style={{ minHeight: 0 }} checked={gPick.includes(a.id)} onChange={e => setGPick(e.target.checked ? [...gPick, a.id] : gPick.filter(x => x !== a.id))} />
+                  <span><b>{a.start ? new Date(a.start.replace(" ", "T")).toLocaleString("en-AU", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : ""}</b> {a.name} · {a.km ?? "–"} km · {a.sec ? Math.round(a.sec / 60) + " min" : "–"}{a.hr ? ` · ${Math.round(a.hr)} bpm` : ""}</span>
+                </label>
+              ))}
+              <div className="row" style={{ marginTop: 4 }}><span className="sp" /><button type="button" className="btn sm" onClick={() => setGList(null)}>Cancel</button><button type="button" className="btn primary sm" disabled={gBusy || !gPick.length} onClick={gImport}>{gBusy ? "Importing…" : `Import ${gPick.length} ${gPick.length === 1 ? "activity" : "activities"}`}</button></div>
+            </div>
+          ) : <p className="note" style={{ margin: "6px 0 0" }}>No Garmin activities in the day either side of this session.</p>)}
+          {gErr && <p className="err" style={{ margin: "6px 0 0" }}>{gErr}</p>}
+        </div>
+      )}
       <label className={"drop" + (over ? " on" : "")} onDragOver={e => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)}
         onDrop={e => { e.preventDefault(); setOver(false); addFiles(e.dataTransfer.files); }}>
         <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--royal)" strokeWidth="1.8" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" /></svg>

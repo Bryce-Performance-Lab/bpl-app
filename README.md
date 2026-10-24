@@ -40,6 +40,14 @@ Built with Next.js (hosting on Vercel) and Supabase (database, logins, file stor
 
 ---
 
+## Garmin import (your own runs only)
+Garmin's Personal API key is for the key owner's own data, so it's switched on for one athlete record.
+In Vercel → Settings → Environment Variables add (server-only, no NEXT_PUBLIC_ prefix):
+- `GARMIN_PERSONAL_API_KEY` = your personal key from Garmin Connect (mark it Sensitive)
+- `GARMIN_ATHLETE_EMAIL` = the email on *your* athlete record in the app
+Then redeploy. On that athlete's runs the coach sees **Import from Garmin Connect**.
+For athletes, apply for Garmin's Starter (business) tier instead.
+
 ## Not set up yet
 - **Forgot-password emails** need an email service (e.g. Resend) connected in Supabase → Authentication → SMTP. Until then, reset a password from Supabase → Authentication → Users.
 - **Automatic watch sync** (Terra etc.), payments and notifications.
