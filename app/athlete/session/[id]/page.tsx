@@ -1,7 +1,7 @@
 "use client";
 import { use, useState } from "react";
 import Link from "next/link";
-import { hotRunsBefore, iso } from "@/lib/engine.js";
+import { hotRunsBefore, iso, mainStep } from "@/lib/engine.js";
 import { useAthlete, NotLinked } from "@/components/useAthlete";
 import SessionHead from "@/components/SessionHead";
 import StepsList from "@/components/StepsList";
@@ -37,7 +37,7 @@ export default function AthleteSession({ params }: { params: Promise<{ id: strin
           {act && !editing ? (
             <>
               <div className="row"><h2 style={{ flex: 1 }}>Your run</h2><button className="btn sm" onClick={() => setEditing(true)}>Edit or add files</button></div>
-              <RunSummary act={act} />
+              <RunSummary act={act} session={!!mainStep(p.steps)} />
             </>
           ) : p.tag === "Rest" ? <p className="note">Rest day: nothing to log.</p> : (
             <>

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { unzipSync } from "fflate";
-import { analyse, compactPart, mergeParts, parseFIT, ZC } from "@/lib/engine.js";
+import { analyse, compactPart, mainStep, mergeParts, parseFIT, ZC } from "@/lib/engine.js";
 import { supabase } from "@/lib/supabase/client";
 import type { Activity, Athlete, Plan } from "@/lib/data";
 import AnalysisView from "./AnalysisView";
@@ -174,7 +174,8 @@ export default function RunLogger({ athlete, plan, onSaved, onCancel }: { athlet
           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => <button key={n} type="button" aria-pressed={rpe === n} onClick={() => setRpe(rpe === n ? null : n)}>{n}</button>)}
         </div>
       </div>
-      <div>
+      {/* lactate only for workouts with a main set (T3 or faster), not easy, long or recovery runs */}
+      {(mainStep(plan.steps) || lacs.length > 0) && <div>
         <div className="row" style={{ marginBottom: 6 }}><span className="lab">Lactate readings (optional)</span><span className="sp" /><button type="button" className="btn sm" onClick={() => setLacs([...lacs, { at: "", v: "" }])}>+ Add reading</button></div>
         {lacs.map((l, i) => (
           <div key={i} className="row" style={{ marginBottom: 6, alignItems: "flex-end" }}>
@@ -184,7 +185,7 @@ export default function RunLogger({ athlete, plan, onSaved, onCancel }: { athlet
           </div>
         ))}
         <datalist id="lacWhen">{when.map(o => <option key={o} value={o} />)}</datalist>
-      </div>
+      </div>}
       <label className="f">NOTE FOR YOUR COACH<textarea value={comment} placeholder="How it felt, conditions, anything unusual" onChange={e => setComment(e.target.value)} /></label>
       <div className="row">
         {ex && <button type="button" className="btn danger" disabled={busy} onClick={removeRun}>Remove run</button>}

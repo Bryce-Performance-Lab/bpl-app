@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase/client";
 import type { Activity } from "@/lib/data";
 
 /** Athlete's RPE, lactate and note, plus the coach's reply (editable by the coach). */
-export default function RunSummary({ act, coach, onSaved }: { act: Activity; coach?: boolean; onSaved?: (a: Activity) => void }) {
+export default function RunSummary({ act, coach, onSaved, session = true }: { act: Activity; coach?: boolean; onSaved?: (a: Activity) => void; session?: boolean }) {
   const [reply, setReply] = useState(act.coach_comment || ""), [busy, setBusy] = useState(false), [msg, setMsg] = useState("");
   async function save() {
     setBusy(true); setMsg("");
@@ -15,7 +15,7 @@ export default function RunSummary({ act, coach, onSaved }: { act: Activity; coa
     <div className="stack" style={{ gap: 10 }}>
       <div className="tiles">
         <div className="tile"><span>RPE</span><b>{act.rpe ?? "–"}</b></div>
-        <div className="tile"><span>Peak lactate</span><b>{act.lactate?.length ? Math.max(...act.lactate.map(l => +l.v)).toFixed(1) + " mmol/L" : "–"}</b></div>
+        {(session || act.lactate?.length > 0) && <div className="tile"><span>Peak lactate</span><b>{act.lactate?.length ? Math.max(...act.lactate.map(l => +l.v)).toFixed(1) + " mmol/L" : "–"}</b></div>}
       </div>
       {act.lactate?.length > 0 && <div className="note">Lactate: {act.lactate.map(l => `${l.at || "–"} ${(+l.v).toFixed(1)}`).join(" · ")}</div>}
       {act.comment && <div className="card" style={{ padding: 10, borderLeft: "4px solid var(--sky)" }}><div className="lab">Athlete's note</div>{act.comment}</div>}

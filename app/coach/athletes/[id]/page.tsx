@@ -3,7 +3,7 @@ import { use, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { loadPlans, TAG_COLOUR, type Athlete, type Plan } from "@/lib/data";
-import { addDays, dur, fmt, headline, hotRunsBefore, iso, monday, totals, zRange, ZC, ZNAME, fromIso } from "@/lib/engine.js";
+import { addDays, dur, fmt, headline, hotRunsBefore, mainStep, iso, monday, totals, zRange, ZC, ZNAME, fromIso } from "@/lib/engine.js";
 import Dialog from "@/components/Dialog";
 import AthleteForm from "@/components/AthleteForm";
 import SessionEditor from "@/components/SessionEditor";
@@ -137,7 +137,7 @@ export default function CoachAthlete({ params }: { params: Promise<{ id: string 
                     {cur.analysis && <button className={"btn sm" + (cmp ? " primary" : "")} onClick={() => setCmp(!cmp)}>Compare ↗</button>}
                   </div>
                   {cmp && <div className="card"><h3 style={{ marginBottom: 8 }}>Compare with similar sessions</h3><CompareView all={plans} ses={cur} athlete={a} /></div>}
-                  <RunSummary act={cur.activity} coach onSaved={() => load()} />
+                  <RunSummary act={cur.activity} coach onSaved={() => load()} session={!!mainStep(cur.steps)} />
                   <AnalysisView an={cur.analysis} athlete={a} steps={cur.steps} parts={cur.activity.parts} note={cur.activity.comment} weather={cur.activity.weather} hotRuns={hotRunsBefore(plans, cur.date)} />
                 </div>
               ) : (
