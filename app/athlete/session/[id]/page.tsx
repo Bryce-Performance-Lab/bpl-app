@@ -1,7 +1,7 @@
 "use client";
 import { use, useState } from "react";
 import Link from "next/link";
-import { iso } from "@/lib/engine.js";
+import { hotRunsBefore, iso } from "@/lib/engine.js";
 import { useAthlete, NotLinked } from "@/components/useAthlete";
 import SessionHead from "@/components/SessionHead";
 import StepsList from "@/components/StepsList";
@@ -50,7 +50,7 @@ export default function AthleteSession({ params }: { params: Promise<{ id: strin
         <section className="card stack">
           <div className="row"><h2 style={{ flex: 1 }}>Result</h2><button className={"btn sm" + (cmp ? " primary" : "")} onClick={() => setCmp(!cmp)}>Compare with past sessions</button></div>
           {cmp && <CompareView all={plans} ses={p} athlete={a} />}
-          <AnalysisView an={act.analysis} athlete={a} steps={p.steps} parts={act.parts} note={act.comment} weather={act.weather} />
+          <AnalysisView an={act.analysis} athlete={a} steps={p.steps} parts={act.parts} note={act.comment} weather={act.weather} hotRuns={hotRunsBefore(plans, p.date)} />
         </section>
       )}
       {toast.node}

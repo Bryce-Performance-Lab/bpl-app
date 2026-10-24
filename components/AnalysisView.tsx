@@ -1,11 +1,16 @@
 "use client";
-import { useMemo } from "react";
-import { analyse, detectThemes, dewBand, isHot, thermalStrain, dur, fmt, hardest, hrChartSVG, hrZone, hrRangeText, mergeParts, paceChartSVG, partRole, totals, verdictFor, zone, zRangeShort, ZC, FIT_EPOCH } from "@/lib/engine.js";
+import { useEffect, useMemo, useState } from "react";
+import { analyse, detectThemes, dewBand, heatStress, isHot, seasonOf, thermalStrain, dur, fmt, hardest, hrChartSVG, hrZone, hrRangeText, mergeParts, paceChartSVG, partRole, totals, verdictFor, zone, zRangeShort, ZC, FIT_EPOCH } from "@/lib/engine.js";
 import type { Athlete, Step } from "@/lib/data";
-import { windWord } from "@/lib/weather";
+import { fetchHeatContext, windWord } from "@/lib/weather";
 
 /** Detected workout, rep table, warm-up/cool-down, pace chart and time in zone. */
-export default function AnalysisView({ an: saved, athlete, steps, parts, onRemovePart, note, weather }: { an: any; athlete: Athlete; steps: Step[]; parts?: any[]; onRemovePart?: (i: number) => void; note?: string | null; weather?: any }) {
+export default function AnalysisView({ an: saved, athlete, steps, parts, onRemovePart, note, weather: savedWeather, hotRuns }: { an: any; athlete: Athlete; steps: Step[]; parts?: any[]; onRemovePart?: (i: number) => void; note?: string | null; weather?: any; hotRuns?: number }) {
+  // runs saved before acclimatisation was added: look up the past fortnight on the fly
+  const [ctx, setCtx] = useState<any>(null);
+  useEffect(() => { let live = true; setCtx(null); if (savedWeather && !savedWeather.context && isHot(savedWeather)) fetchHeatContext(savedWeather, new Date(savedWeather.start)).then(c => { if (live) setCtx(c); }); return () => { live = false; }; }, [savedWeather]);
+  const weather = savedWeather ? { ...savedWeather, context: savedWeather.context || ctx } : null;
+  const hs = heatStress(weather, hotRuns);
   // Re-run the analysis from the stored files so it always uses the athlete's current zones (pace and HR).
   const an = useMemo(() => { try { return parts?.length ? analyse(mergeParts(parts), athlete, steps) : saved; } catch { return saved; } }, [saved, parts, athlete, steps]);
   if (!an) return null;
@@ -49,7 +54,7 @@ export default function AnalysisView({ an: saved, athlete, steps, parts, onRemov
       {weather && (
         <div className="card" style={{ padding: 12, background: "var(--sunk)", border: 0 }}>
           <div className="row" style={{ marginBottom: 6 }}>
-            <span className="lab">Weather during the run</span><span className="sp" />
+            <span className="lab">Weather during the run{seasonOf(weather.lat, weather.start) ? " · " + seasonOf(weather.lat, weather.start) : ""}</span><span className="sp" />
             {dewBand(weather.dew) && <span className={"pill p-" + dewBand(weather.dew).k}>{dewBand(weather.dew).t}</span>}
           </div>
           <div className="row" style={{ gap: 16, fontSize: 13 }}>
@@ -59,6 +64,13 @@ export default function AnalysisView({ an: saved, athlete, steps, parts, onRemov
             <span><b>{weather.wind} km/h</b> <span className="note">{windWord(weather.windDir)} wind{weather.gust ? `, gusts ${Math.round(weather.gust)}` : ""}</span></span>
             {weather.rain ? <span><b>{weather.rain} mm</b> <span className="note">rain</span></span> : null}
           </div>
+          {hs && (
+            <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--line)" }}>
+              <div className="row"><b style={{ fontSize: 13 }}>Heat stress for this athlete</b><span className={"pill p-" + hs.k}>{hs.t}</span>{hs.acc && <span className={"pill p-" + hs.acc.k}>{hs.acc.t}</span>}</div>
+              <ul style={{ margin: "6px 0 0", paddingLeft: 18, fontSize: 12.5 }}>{hs.reasons.map((r: string) => <li key={r}>{r}</li>)}</ul>
+              <div className="note" style={{ marginTop: 4 }}>Heat acclimatisation builds over about 1–2 weeks of regular heat and fades after a few weeks without it, so early-season hot days hit harder. This is an estimate from local weather and logged runs.</div>
+            </div>
+          )}
           <div className="note" style={{ marginTop: 6 }}>Weather data by <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo.com</a> for the run's start area and time.</div>
         </div>
       )}

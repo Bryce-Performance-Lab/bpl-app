@@ -1,7 +1,7 @@
 "use client";
 import { Fragment, useMemo, useState } from "react";
 import Link from "next/link";
-import { analyse, driftPatterns, mergeParts } from "@/lib/engine.js";
+import { analyse, driftPatterns, heatStress, hotRunsBefore, mergeParts } from "@/lib/engine.js";
 import type { Athlete, Plan } from "@/lib/data";
 
 const MIN_RUNS = 3;
@@ -34,7 +34,8 @@ export default function DriftInsights({ plans, athlete, linkBase }: { plans: Pla
     const runs = plans.filter(p => p.activity?.parts?.length).map(p => {
       let drift = null;
       try { drift = analyse(mergeParts(p.activity.parts), athlete, p.steps).drift; } catch { /* unreadable run */ }
-      return { id: p.id, date: p.date, title: p.title, drift, note: p.activity.comment || "", w: p.activity.weather || null };
+      const w = p.activity.weather || null;
+      return { id: p.id, date: p.date, title: p.title, drift, note: p.activity.comment || "", w, hs: heatStress(w, hotRunsBefore(plans, p.date)) };
     });
     const out: any = driftPatterns(runs);
     // measured conditions (Open-Meteo), independent of what was written
@@ -44,7 +45,10 @@ export default function DriftInsights({ plans, athlete, linkBase }: { plans: Pla
       { key: "m-dew", label: "Dew point 16°C or more", test: (w: any) => w.dew >= 16 },
       { key: "m-temp", label: "Temperature 24°C or more", test: (w: any) => w.temp >= 24 },
       { key: "m-wind", label: "Wind 20 km/h or more", test: (w: any) => w.wind >= 20 },
-    ].map(m => { const yes = withW.filter((r: any) => m.test(r.w)), no = withW.filter((r: any) => !m.test(r.w));
+      { key: "m-spike", label: "Heat spike (5°C+ above past 2 weeks)", test: (_: any, r: any) => r.hs?.anomaly >= 5 },
+      { key: "m-noacc", label: "Hot day, not heat acclimatised", test: (_: any, r: any) => r.hs?.acc?.level === 0 },
+      { key: "m-high", label: "High heat stress (adjusted for acclimatisation)", test: (_: any, r: any) => (r.hs?.level ?? 0) >= 2 },
+    ].map(m => { const yes = withW.filter((r: any) => m.test(r.w, r)), no = withW.filter((r: any) => !m.test(r.w, r));
       return { key: m.key, label: m.label, n: yes.length, with: avg(yes.map((r: any) => r.drift)), without: avg(no.map((r: any) => r.drift)), runs: yes, measured: true }; })
       .filter((m: any) => m.n > 0 && m.n < withW.length);
     out.nWeather = withW.length;

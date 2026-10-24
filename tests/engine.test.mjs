@@ -74,3 +74,12 @@ test("GPS start point and watch temperature are read; thermal strain only on hot
   assert.equal(thermalStrain(an, { temp: 30, feels: 30, dew: 10 }).t, "Marked rise");
   assert.equal(thermalStrain(an, { temp: 15, feels: 14, dew: 8 }), null);
 });
+
+test("early-season heat scores harder than the same heat in mid-summer", async () => {
+  const { heatStress, seasonOf } = await import("../lib/engine.js");
+  assert.equal(seasonOf(-37.9, "2026-10-22T03:00:00Z"), "Spring"); assert.equal(seasonOf(51.5, "2026-10-22T03:00:00Z"), "Autumn");
+  const w = { temp: 29, feels: 30, dew: 10, tempMax: 30, lat: -37.89 };
+  const spring = heatStress({ ...w, start: "2026-10-22T03:00:00Z", context: { avgMax: 22.4, hotDays: 1, humidDays: 0 } }, 0);
+  const summer = heatStress({ ...w, start: "2027-02-10T03:00:00Z", context: { avgMax: 29, hotDays: 11, humidDays: 2 } }, 4);
+  assert.ok(spring.level > summer.level); assert.equal(spring.acc.level, 0); assert.equal(summer.acc.level, 2);
+});

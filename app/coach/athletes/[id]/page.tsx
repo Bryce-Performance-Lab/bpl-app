@@ -3,7 +3,7 @@ import { use, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { loadPlans, TAG_COLOUR, type Athlete, type Plan } from "@/lib/data";
-import { addDays, dur, fmt, headline, iso, monday, totals, zRange, ZC, ZNAME, fromIso } from "@/lib/engine.js";
+import { addDays, dur, fmt, headline, hotRunsBefore, iso, monday, totals, zRange, ZC, ZNAME, fromIso } from "@/lib/engine.js";
 import Dialog from "@/components/Dialog";
 import AthleteForm from "@/components/AthleteForm";
 import SessionEditor from "@/components/SessionEditor";
@@ -131,7 +131,7 @@ export default function CoachAthlete({ params }: { params: Promise<{ id: string 
                   </div>
                   {cmp && <div className="card"><h3 style={{ marginBottom: 8 }}>Compare with similar sessions</h3><CompareView all={plans} ses={cur} athlete={a} /></div>}
                   <RunSummary act={cur.activity} coach onSaved={() => load()} />
-                  <AnalysisView an={cur.analysis} athlete={a} steps={cur.steps} parts={cur.activity.parts} note={cur.activity.comment} weather={cur.activity.weather} />
+                  <AnalysisView an={cur.analysis} athlete={a} steps={cur.steps} parts={cur.activity.parts} note={cur.activity.comment} weather={cur.activity.weather} hotRuns={hotRunsBefore(plans, cur.date)} />
                 </div>
               ) : (
                 <RunLogger athlete={a} plan={cur} onCancel={cur.activity ? () => setUpload(false) : undefined}
